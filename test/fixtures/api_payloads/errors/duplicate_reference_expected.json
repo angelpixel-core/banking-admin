@@ -1,0 +1,5 @@
+{
+  "code": "duplicate_reference",
+  "message": "reference already posted",
+  "correlation_id": "CORRELATION_ID_PLACEHOLDER"
+}

@@ -60,3 +60,19 @@ bin/rails banking_admin:verify_t2
 ```bash
 bin/rails test
 ```
+
+## API payload fixtures for T3
+
+Request and expected response payloads are tracked as JSON fixtures in:
+
+- `test/fixtures/api_payloads/accounts/`
+- `test/fixtures/api_payloads/ledger_entries/`
+- `test/fixtures/api_payloads/balances/`
+- `test/fixtures/api_payloads/errors/`
+
+Use `json_fixture("path/without_extension")` in tests. Example:
+
+```ruby
+payload = json_fixture("ledger_entries/post_valid")
+expected_error = json_fixture("errors/duplicate_reference_expected")
+```

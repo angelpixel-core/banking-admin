@@ -1,0 +1,5 @@
+{
+  "code": "unbalanced_transaction",
+  "message": "debits and credits are not balanced",
+  "correlation_id": "CORRELATION_ID_PLACEHOLDER"
+}
