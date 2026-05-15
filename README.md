@@ -76,3 +76,32 @@ Use `json_fixture("path/without_extension")` in tests. Example:
 payload = json_fixture("ledger_entries/post_valid")
 expected_error = json_fixture("errors/duplicate_reference_expected")
 ```
+
+## API examples (T3)
+
+Endpoints are exposed under `/banking_admin/api/v1`.
+
+Create account:
+
+```bash
+curl -X POST http://localhost:3000/banking_admin/api/v1/accounts \
+  -H "Content-Type: application/json" \
+  -H "X-Correlation-ID: demo-account-1" \
+  -d '{"account":{"id":"11111111-aaaa-bbbb-cccc-000000000001","account_type":"user","base_currency":"USD","status":"active"}}'
+```
+
+Post ledger entries:
+
+```bash
+curl -X POST http://localhost:3000/banking_admin/api/v1/ledger_entries \
+  -H "Content-Type: application/json" \
+  -H "X-Correlation-ID: demo-ledger-1" \
+  -d '{"ledger_entry":{"reference_type":"transfer","reference_id":"demo-ref-0001","entries":[{"id":"33333333-3333-3333-3333-333333333331","account_id":"11111111-1111-1111-1111-111111111111","side":"debit","asset_code":"USD","amount":"100.00"},{"id":"33333333-3333-3333-3333-333333333332","account_id":"22222222-2222-2222-2222-222222222222","side":"credit","asset_code":"USD","amount":"100.00"}]}}'
+```
+
+Query balances:
+
+```bash
+curl "http://localhost:3000/banking_admin/api/v1/balances?account_id=11111111-1111-1111-1111-111111111111&asset_code=USD" \
+  -H "X-Correlation-ID: demo-balance-1"
+```
