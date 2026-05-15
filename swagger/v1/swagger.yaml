@@ -1,0 +1,141 @@
+---
+openapi: 3.0.1
+info:
+  title: API V1
+  version: v1
+paths:
+  "/banking_admin/api/v1/accounts":
+    post:
+      summary: Create account
+      tags:
+      - Accounts
+      parameters:
+      - name: X-Correlation-ID
+        in: header
+        schema:
+          type: string
+      responses:
+        '201':
+          description: account created
+        '422':
+          description: invalid account state
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - account
+              properties:
+                account:
+                  type: object
+                  required:
+                  - account_type
+                  - base_currency
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    account_type:
+                      type: string
+                      enum:
+                      - user
+                      - treasury
+                      - system
+                    base_currency:
+                      type: string
+                    status:
+                      type: string
+                      enum:
+                      - pending
+                      - active
+                      - suspended
+  "/banking_admin/api/v1/ledger_entries":
+    post:
+      summary: Post ledger entries
+      tags:
+      - Ledger
+      parameters:
+      - name: X-Correlation-ID
+        in: header
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ledger transaction created
+        '409':
+          description: duplicate reference
+        '422':
+          description: unbalanced transaction
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - ledger_entry
+              properties:
+                ledger_entry:
+                  type: object
+                  required:
+                  - reference_type
+                  - reference_id
+                  - entries
+                  properties:
+                    reference_type:
+                      type: string
+                    reference_id:
+                      type: string
+                    entries:
+                      type: array
+                      items:
+                        type: object
+                        required:
+                        - id
+                        - account_id
+                        - side
+                        - asset_code
+                        - amount
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                          account_id:
+                            type: string
+                            format: uuid
+                          side:
+                            type: string
+                            enum:
+                            - debit
+                            - credit
+                          asset_code:
+                            type: string
+                          amount:
+                            type: string
+  "/banking_admin/api/v1/balances":
+    get:
+      summary: List balances
+      tags:
+      - Balances
+      parameters:
+      - name: X-Correlation-ID
+        in: header
+        schema:
+          type: string
+      - name: account_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: asset_code
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: balances returned
+servers:
+- url: https://{defaultHost}
+  variables:
+    defaultHost:
+      default: www.example.com
