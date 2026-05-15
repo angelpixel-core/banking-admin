@@ -1,24 +1,28 @@
-# README
+# Banking Admin
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Rails adapter app for FinOps Core Banking domain.
 
-Things you may want to cover:
+This app consumes the framework-agnostic `banking-core` package and provides:
 
-* Ruby version
+- ActiveRecord persistence adapters,
+- SQL/DB constraints and triggers,
+- transaction boundaries and use case wiring.
 
-* System dependencies
+## Architecture boundaries
 
-* Configuration
+- Domain logic and use cases live in `packages/banking-core`.
+- Rails-specific persistence and composition live in this app under `BankingAdmin::...`.
 
-* Database creation
+## T2 persistence invariants
 
-* Database initialization
+- Global idempotency: `ledger_transactions(reference_type, reference_id)` is unique.
+- Immutable ledger entries: SQL trigger blocks update/delete on `ledger_entries`.
+- Double-entry and domain checks are enforced by `banking-core` aggregate rules.
 
-* How to run the test suite
+## Testing
 
-* Services (job queues, cache servers, search engines, etc.)
+Run the suite with:
 
-* Deployment instructions
-
-* ...
+```bash
+bin/rails test
+```
