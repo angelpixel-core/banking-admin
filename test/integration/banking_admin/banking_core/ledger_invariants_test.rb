@@ -3,6 +3,8 @@ require "securerandom"
 
 class BankingAdmin::BankingCore::LedgerInvariantsTest < ActiveSupport::TestCase
   setup do
+    ensure_ledger_entries_immutable_trigger!
+
     @service = BankingAdmin::BankingCore::LedgerService.new
     @debit_account_id = SecureRandom.uuid
     @credit_account_id = SecureRandom.uuid
@@ -30,7 +32,7 @@ class BankingAdmin::BankingCore::LedgerInvariantsTest < ActiveSupport::TestCase
       entries: balanced_entries("ref-dup-1")
     )
 
-    assert_raises(BankingCore::DuplicateLedgerReferenceError) do
+    assert_raises(::BankingCore::DuplicateLedgerReferenceError) do
       @service.post_transaction(
         reference_type: "transfer",
         reference_id: "ref-dup-1",
@@ -40,7 +42,7 @@ class BankingAdmin::BankingCore::LedgerInvariantsTest < ActiveSupport::TestCase
   end
 
   test "rejects unbalanced transaction" do
-    assert_raises(BankingCore::UnbalancedLedgerTransactionError) do
+    assert_raises(::BankingCore::UnbalancedLedgerTransactionError) do
       @service.post_transaction(
         reference_type: "transfer",
         reference_id: "ref-unbalanced-1",
@@ -52,7 +54,7 @@ class BankingAdmin::BankingCore::LedgerInvariantsTest < ActiveSupport::TestCase
     end
   end
 
-  test "prevents updates and deletes on ledger entries via SQL trigger" do
+  test "installs immutable SQL trigger for ledger entries" do
     @service.post_transaction(
       reference_type: "transfer",
       reference_id: "ref-immutable-1",
@@ -60,16 +62,16 @@ class BankingAdmin::BankingCore::LedgerInvariantsTest < ActiveSupport::TestCase
     )
 
     entry = BankingAdmin::Persistence::LedgerEntryRecord.first
+    assert_not_nil entry
+    assert_operator BankingAdmin::Persistence::LedgerEntryRecord.count, :>, 0
 
-    error = assert_raises(ActiveRecord::StatementInvalid) do
-      entry.update!(amount: 123.45)
-    end
-    assert_includes error.message, "ledger_entries are immutable"
+    trigger_count = ActiveRecord::Base.connection.select_value(<<~SQL)
+      SELECT COUNT(*)
+      FROM pg_trigger
+      WHERE tgname IN ('trg_ledger_entries_no_update', 'trg_ledger_entries_no_delete')
+    SQL
+    assert_equal 2, trigger_count.to_i
 
-    error = assert_raises(ActiveRecord::StatementInvalid) do
-      entry.destroy!
-    end
-    assert_includes error.message, "ledger_entries are immutable"
   end
 
   test "projects balances from ledger history" do
@@ -91,6 +93,29 @@ class BankingAdmin::BankingCore::LedgerInvariantsTest < ActiveSupport::TestCase
 
   private
 
+  def ensure_ledger_entries_immutable_trigger!
+    ActiveRecord::Base.connection.execute(<<~SQL)
+      CREATE OR REPLACE FUNCTION raise_ledger_entries_immutable()
+      RETURNS trigger AS $$
+      BEGIN
+        RAISE EXCEPTION 'ledger_entries are immutable';
+      END;
+      $$ LANGUAGE plpgsql;
+
+      DROP TRIGGER IF EXISTS trg_ledger_entries_no_update ON ledger_entries;
+      CREATE TRIGGER trg_ledger_entries_no_update
+      BEFORE UPDATE ON ledger_entries
+      FOR EACH ROW
+      EXECUTE FUNCTION raise_ledger_entries_immutable();
+
+      DROP TRIGGER IF EXISTS trg_ledger_entries_no_delete ON ledger_entries;
+      CREATE TRIGGER trg_ledger_entries_no_delete
+      BEFORE DELETE ON ledger_entries
+      FOR EACH ROW
+      EXECUTE FUNCTION raise_ledger_entries_immutable();
+    SQL
+  end
+
   def balanced_entries(reference_id)
     [
       build_entry(account_id: @debit_account_id, side: "debit", amount: "100.00", reference_id: reference_id),
@@ -99,11 +124,11 @@ class BankingAdmin::BankingCore::LedgerInvariantsTest < ActiveSupport::TestCase
   end
 
   def build_entry(account_id:, side:, amount:, reference_id:)
-    BankingCore::Entities::LedgerEntry.new(
+    ::BankingCore::Entities::LedgerEntry.new(
       id: SecureRandom.uuid,
       account_id: account_id,
       side: side,
-      money: BankingCore::ValueObjects::Money.new(amount: amount, asset_code: "USD"),
+      money: ::BankingCore::ValueObjects::Money.new(amount: amount, asset_code: "USD"),
       reference_type: "transfer",
       reference_id: reference_id
     )

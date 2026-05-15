@@ -2,7 +2,7 @@ module BankingAdmin
   module BankingCore
     class AccountRepository
       def save(account)
-        record = Persistence::AccountRecord.find_or_initialize_by(id: account.id)
+        record = ::BankingAdmin::Persistence::AccountRecord.find_or_initialize_by(id: account.id)
         record.account_type = account.account_type
         record.status = account.status
         record.base_currency = account.base_currency
@@ -12,7 +12,7 @@ module BankingAdmin
       end
 
       def find(account_id)
-        record = Persistence::AccountRecord.find_by(id: account_id)
+        record = ::BankingAdmin::Persistence::AccountRecord.find_by(id: account_id)
         return nil unless record
 
         ::BankingCore::Entities::Account.new(

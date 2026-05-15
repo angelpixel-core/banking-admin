@@ -1,5 +1,7 @@
-PATH
-  remote: ../../packages/banking-core
+GIT
+  remote: https://github.com/angelpixel-core/banking-core.git
+  revision: e48ff47f9f9cb1d3278b9d554cc32851f70f64c4
+  branch: main
   specs:
     banking-core (0.1.0)
       bigdecimal (>= 3.1)

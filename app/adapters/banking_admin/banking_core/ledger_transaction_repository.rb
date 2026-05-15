@@ -2,11 +2,11 @@ module BankingAdmin
   module BankingCore
     class LedgerTransactionRepository
       def exists_reference?(reference_type, reference_id)
-        Persistence::LedgerTransactionRecord.exists?(reference_type: reference_type, reference_id: reference_id)
+        ::BankingAdmin::Persistence::LedgerTransactionRecord.exists?(reference_type: reference_type, reference_id: reference_id)
       end
 
       def save(transaction)
-        transaction_record = Persistence::LedgerTransactionRecord.create!(
+        transaction_record = ::BankingAdmin::Persistence::LedgerTransactionRecord.create!(
           id: SecureRandom.uuid,
           reference_type: transaction.reference_type,
           reference_id: transaction.reference_id,
@@ -15,7 +15,7 @@ module BankingAdmin
         )
 
         transaction.entries.each do |entry|
-          Persistence::LedgerEntryRecord.create!(
+          ::BankingAdmin::Persistence::LedgerEntryRecord.create!(
             id: entry.id,
             transaction_id: transaction_record.id,
             account_id: entry.account_id,
@@ -28,7 +28,7 @@ module BankingAdmin
       end
 
       def all_entries
-        Persistence::LedgerEntryRecord.order(:created_at).map do |record|
+        ::BankingAdmin::Persistence::LedgerEntryRecord.order(:created_at).map do |record|
           ::BankingCore::Entities::LedgerEntry.new(
             id: record.id,
             account_id: record.account_id,

@@ -26,3 +26,37 @@ Run the suite with:
 ```bash
 bin/rails test
 ```
+
+## Quick validation (local)
+
+This app expects local Postgres from the project compose stack.
+
+1. Start local platform from repo root:
+
+```bash
+make restart
+```
+
+2. Prepare Banking Admin database:
+
+```bash
+bin/rails db:prepare
+```
+
+3. Seed deterministic T2 dataset:
+
+```bash
+bin/rails banking_admin:seed_t2
+```
+
+4. Verify core invariants quickly:
+
+```bash
+bin/rails banking_admin:verify_t2
+```
+
+5. Run tests:
+
+```bash
+bin/rails test
+```
