@@ -71,7 +71,6 @@ class BankingAdmin::BankingCore::LedgerInvariantsTest < ActiveSupport::TestCase
       WHERE tgname IN ('trg_ledger_entries_no_update', 'trg_ledger_entries_no_delete')
     SQL
     assert_equal 2, trigger_count.to_i
-
   end
 
   test "projects balances from ledger history" do
