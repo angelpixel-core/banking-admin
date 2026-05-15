@@ -1,7 +1,7 @@
 require "securerandom"
 
 module BankingAdmin
-  module Api
+  module API
     module V1
       class LedgerEntriesController < BaseController
         def create

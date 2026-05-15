@@ -1,5 +1,5 @@
 module BankingAdmin
-  module Api
+  module API
     module V1
       class BalancesController < BaseController
         def index

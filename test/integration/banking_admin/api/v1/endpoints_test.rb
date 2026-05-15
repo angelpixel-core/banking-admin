@@ -1,6 +1,6 @@
 require "test_helper"
 
-class BankingAdmin::Api::V1::EndpointsTest < ActionDispatch::IntegrationTest
+class BankingAdmin::API::V1::EndpointsTest < ActionDispatch::IntegrationTest
   setup do
     @service = BankingAdmin::BankingCore::LedgerService.new
     @debit_account_id = "11111111-1111-1111-1111-111111111111"

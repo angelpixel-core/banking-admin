@@ -1,5 +1,5 @@
 module BankingAdmin
-  module Api
+  module API
     class BaseController < ActionController::API
       before_action :assign_correlation_id
       after_action :set_correlation_header
