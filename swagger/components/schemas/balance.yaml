@@ -1,0 +1,25 @@
+type: object
+required:
+  - account_id
+  - asset_code
+  - available_amount
+  - locked_amount
+  - borrowed_amount
+properties:
+  account_id:
+    type: string
+    format: uuid
+  asset_code:
+    type: string
+  available_amount:
+    type: string
+  locked_amount:
+    type: string
+  borrowed_amount:
+    type: string
+example:
+  account_id: "11111111-1111-1111-1111-111111111111"
+  asset_code: "USD"
+  available_amount: "100.0"
+  locked_amount: "0.0"
+  borrowed_amount: "0.0"

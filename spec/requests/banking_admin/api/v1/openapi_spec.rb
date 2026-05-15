@@ -7,24 +7,10 @@ RSpec.describe "BankingAdmin API V1", type: :request do
       consumes "application/json"
       produces "application/json"
       parameter name: "X-Correlation-ID", in: :header, schema: { type: :string }
-      parameter name: :account, in: :body, schema: {
-        type: :object,
-        required: [ "account" ],
-        properties: {
-          account: {
-            type: :object,
-            required: %w[account_type base_currency],
-            properties: {
-              id: { type: :string, format: :uuid },
-              account_type: { type: :string, enum: %w[user treasury system] },
-              base_currency: { type: :string },
-              status: { type: :string, enum: %w[pending active suspended] }
-            }
-          }
-        }
-      }
+      parameter name: :account, in: :body, schema: { "$ref" => "#/components/schemas/account_create_request" }
 
       response "201", "account created" do
+        schema "$ref" => "#/components/schemas/account_create_response"
         let(:"X-Correlation-ID") { "openapi-account-1" }
         let(:account) { { account: json_fixture("accounts/create_valid") } }
 
@@ -35,6 +21,7 @@ RSpec.describe "BankingAdmin API V1", type: :request do
       end
 
       response "422", "invalid account state" do
+        schema "$ref" => "#/components/schemas/error_envelope"
         let(:"X-Correlation-ID") { "openapi-account-2" }
         let(:account) { { account: json_fixture("accounts/create_invalid_type") } }
 
@@ -49,34 +36,7 @@ RSpec.describe "BankingAdmin API V1", type: :request do
       consumes "application/json"
       produces "application/json"
       parameter name: "X-Correlation-ID", in: :header, schema: { type: :string }
-      parameter name: :ledger_entry, in: :body, schema: {
-        type: :object,
-        required: [ "ledger_entry" ],
-        properties: {
-          ledger_entry: {
-            type: :object,
-            required: %w[reference_type reference_id entries],
-            properties: {
-              reference_type: { type: :string },
-              reference_id: { type: :string },
-              entries: {
-                type: :array,
-                items: {
-                  type: :object,
-                  required: %w[id account_id side asset_code amount],
-                  properties: {
-                    id: { type: :string, format: :uuid },
-                    account_id: { type: :string, format: :uuid },
-                    side: { type: :string, enum: %w[debit credit] },
-                    asset_code: { type: :string },
-                    amount: { type: :string }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+      parameter name: :ledger_entry, in: :body, schema: { "$ref" => "#/components/schemas/ledger_entries_create_request" }
 
       before do
         service = BankingAdmin::BankingCore::LedgerService.new
@@ -85,6 +45,7 @@ RSpec.describe "BankingAdmin API V1", type: :request do
       end
 
       response "201", "ledger transaction created" do
+        schema "$ref" => "#/components/schemas/ledger_entries_create_response"
         let(:"X-Correlation-ID") { "openapi-ledger-1" }
         let(:ledger_entry) { { ledger_entry: json_fixture("ledger_entries/post_valid") } }
 
@@ -92,6 +53,7 @@ RSpec.describe "BankingAdmin API V1", type: :request do
       end
 
       response "409", "duplicate reference" do
+        schema "$ref" => "#/components/schemas/error_envelope"
         let(:"X-Correlation-ID") { "openapi-ledger-2" }
         let(:ledger_entry) { { ledger_entry: json_fixture("ledger_entries/post_duplicate_reference") } }
 
@@ -103,6 +65,7 @@ RSpec.describe "BankingAdmin API V1", type: :request do
       end
 
       response "422", "unbalanced transaction" do
+        schema "$ref" => "#/components/schemas/error_envelope"
         let(:"X-Correlation-ID") { "openapi-ledger-3" }
         let(:ledger_entry) { { ledger_entry: json_fixture("ledger_entries/post_unbalanced") } }
 
@@ -149,6 +112,7 @@ RSpec.describe "BankingAdmin API V1", type: :request do
       end
 
       response "200", "balances returned" do
+        schema "$ref" => "#/components/schemas/balances_index_response"
         let(:"X-Correlation-ID") { "openapi-balance-1" }
         let(:account_id) { json_fixture("balances/get_by_account_query")["account_id"] }
         let(:asset_code) { json_fixture("balances/get_by_account_query")["asset_code"] }

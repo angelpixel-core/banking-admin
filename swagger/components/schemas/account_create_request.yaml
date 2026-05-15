@@ -1,0 +1,33 @@
+type: object
+required:
+  - account
+properties:
+  account:
+    type: object
+    required:
+      - account_type
+      - base_currency
+    properties:
+      id:
+        type: string
+        format: uuid
+      account_type:
+        type: string
+        enum:
+          - user
+          - treasury
+          - system
+      base_currency:
+        type: string
+      status:
+        type: string
+        enum:
+          - pending
+          - active
+          - suspended
+example:
+  account:
+    id: "11111111-aaaa-bbbb-cccc-000000000001"
+    account_type: "user"
+    base_currency: "USD"
+    status: "active"

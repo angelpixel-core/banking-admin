@@ -1,0 +1,20 @@
+type: object
+required:
+  - reference_type
+  - reference_id
+  - entry_count
+  - correlation_id
+properties:
+  reference_type:
+    type: string
+  reference_id:
+    type: string
+  entry_count:
+    type: integer
+  correlation_id:
+    type: string
+example:
+  reference_type: "transfer"
+  reference_id: "fixture-ref-0001"
+  entry_count: 2
+  correlation_id: "test-corr-ledger-1"

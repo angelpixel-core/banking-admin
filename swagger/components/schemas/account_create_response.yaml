@@ -1,0 +1,25 @@
+type: object
+required:
+  - id
+  - account_type
+  - base_currency
+  - status
+  - correlation_id
+properties:
+  id:
+    type: string
+    format: uuid
+  account_type:
+    type: string
+  base_currency:
+    type: string
+  status:
+    type: string
+  correlation_id:
+    type: string
+example:
+  id: "11111111-aaaa-bbbb-cccc-000000000001"
+  account_type: "user"
+  base_currency: "USD"
+  status: "active"
+  correlation_id: "test-corr-accounts-1"

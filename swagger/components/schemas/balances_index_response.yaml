@@ -1,0 +1,19 @@
+type: object
+required:
+  - balances
+  - correlation_id
+properties:
+  balances:
+    type: array
+    items:
+      $ref: "#/components/schemas/balance"
+  correlation_id:
+    type: string
+example:
+  balances:
+    - account_id: "11111111-1111-1111-1111-111111111111"
+      asset_code: "USD"
+      available_amount: "100.0"
+      locked_amount: "0.0"
+      borrowed_amount: "0.0"
+  correlation_id: "test-corr-balances-1"

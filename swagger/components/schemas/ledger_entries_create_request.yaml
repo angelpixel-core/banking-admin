@@ -1,0 +1,56 @@
+type: object
+required:
+  - ledger_entry
+properties:
+  ledger_entry:
+    type: object
+    required:
+      - reference_type
+      - reference_id
+      - entries
+    properties:
+      reference_type:
+        type: string
+      reference_id:
+        type: string
+      entries:
+        type: array
+        items:
+          type: object
+          required:
+            - id
+            - account_id
+            - side
+            - asset_code
+            - amount
+          properties:
+            id:
+              type: string
+              format: uuid
+            account_id:
+              type: string
+              format: uuid
+            side:
+              type: string
+              enum:
+                - debit
+                - credit
+            asset_code:
+              type: string
+            amount:
+              type: string
+example:
+  ledger_entry:
+    reference_type: "transfer"
+    reference_id: "fixture-ref-0001"
+    entries:
+      - id: "33333333-3333-3333-3333-333333333331"
+        account_id: "11111111-1111-1111-1111-111111111111"
+        side: "debit"
+        asset_code: "USD"
+        amount: "100.00"
+      - id: "33333333-3333-3333-3333-333333333332"
+        account_id: "22222222-2222-2222-2222-222222222222"
+        side: "credit"
+        asset_code: "USD"
+        amount: "100.00"
