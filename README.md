@@ -24,7 +24,7 @@ This app consumes the framework-agnostic `banking-core` package and provides:
 Run the suite with:
 
 ```bash
-bin/rails test
+bundle exec rspec
 ```
 
 ## Quick validation (local)
@@ -58,17 +58,17 @@ bin/rails banking_admin:verify_t2
 5. Run tests:
 
 ```bash
-bin/rails test
+bundle exec rspec
 ```
 
 ## API payload fixtures for T3
 
 Request and expected response payloads are tracked as JSON fixtures in:
 
-- `test/fixtures/api_payloads/accounts/`
-- `test/fixtures/api_payloads/ledger_entries/`
-- `test/fixtures/api_payloads/balances/`
-- `test/fixtures/api_payloads/errors/`
+- `spec/fixtures/api_payloads/accounts/`
+- `spec/fixtures/api_payloads/ledger_entries/`
+- `spec/fixtures/api_payloads/balances/`
+- `spec/fixtures/api_payloads/errors/`
 
 Use `json_fixture("path/without_extension")` in tests. Example:
 

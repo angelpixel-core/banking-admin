@@ -13,11 +13,11 @@ module BankingAdmin
       end
 
       rescue_from ::BankingCore::UnbalancedLedgerTransactionError do |error|
-        render_error(code: "unbalanced_transaction", message: error.message, status: :unprocessable_entity)
+        render_error(code: "unbalanced_transaction", message: error.message, status: :unprocessable_content)
       end
 
       rescue_from ::BankingCore::InvalidAccountStateError do |error|
-        render_error(code: "invalid_account_state", message: error.message, status: :unprocessable_entity)
+        render_error(code: "invalid_account_state", message: error.message, status: :unprocessable_content)
       end
 
       rescue_from ArgumentError do |error|

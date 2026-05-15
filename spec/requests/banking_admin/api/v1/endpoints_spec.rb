@@ -1,7 +1,7 @@
-require "test_helper"
+require "rails_helper"
 
-class BankingAdmin::API::V1::EndpointsTest < ActionDispatch::IntegrationTest
-  setup do
+RSpec.describe "BankingAdmin API V1 endpoints" do
+  before do
     @service = BankingAdmin::BankingCore::LedgerService.new
     @debit_account_id = "11111111-1111-1111-1111-111111111111"
     @credit_account_id = "22222222-2222-2222-2222-222222222222"
@@ -10,7 +10,7 @@ class BankingAdmin::API::V1::EndpointsTest < ActionDispatch::IntegrationTest
     @service.create_account(id: @credit_account_id, account_type: "user", base_currency: "usd")
   end
 
-  test "POST /accounts creates account" do
+  it "creates account" do
     payload = json_fixture("accounts/create_valid")
     expected = json_fixture("accounts/create_valid_expected")
 
@@ -19,17 +19,17 @@ class BankingAdmin::API::V1::EndpointsTest < ActionDispatch::IntegrationTest
          as: :json,
          headers: { "X-Correlation-ID" => "test-corr-accounts-1" }
 
-    assert_response :created
+    expect(response).to have_http_status(:created)
     body = JSON.parse(response.body)
 
-    assert_equal expected["id"], body["id"]
-    assert_equal expected["account_type"], body["account_type"]
-    assert_equal expected["base_currency"], body["base_currency"]
-    assert_equal expected["status"], body["status"]
-    assert_equal "test-corr-accounts-1", body["correlation_id"]
+    expect(body["id"]).to eq(expected["id"])
+    expect(body["account_type"]).to eq(expected["account_type"])
+    expect(body["base_currency"]).to eq(expected["base_currency"])
+    expect(body["status"]).to eq(expected["status"])
+    expect(body["correlation_id"]).to eq("test-corr-accounts-1")
   end
 
-  test "POST /accounts returns structured error for invalid account type" do
+  it "returns structured error for invalid account type" do
     payload = json_fixture("accounts/create_invalid_type")
 
     post banking_admin_api_v1_accounts_path,
@@ -37,15 +37,15 @@ class BankingAdmin::API::V1::EndpointsTest < ActionDispatch::IntegrationTest
          as: :json,
          headers: { "X-Correlation-ID" => "test-corr-accounts-2" }
 
-    assert_response :unprocessable_entity
+    expect(response).to have_http_status(:unprocessable_content)
     body = JSON.parse(response.body)
 
-    assert_equal "invalid_account_state", body["code"]
-    assert_equal "invalid account_type", body["message"]
-    assert_equal "test-corr-accounts-2", body["correlation_id"]
+    expect(body["code"]).to eq("invalid_account_state")
+    expect(body["message"]).to eq("invalid account_type")
+    expect(body["correlation_id"]).to eq("test-corr-accounts-2")
   end
 
-  test "POST /ledger_entries creates ledger transaction" do
+  it "creates ledger transaction" do
     payload = json_fixture("ledger_entries/post_valid")
     expected = json_fixture("ledger_entries/post_valid_expected")
 
@@ -54,39 +54,39 @@ class BankingAdmin::API::V1::EndpointsTest < ActionDispatch::IntegrationTest
          as: :json,
          headers: { "X-Correlation-ID" => "test-corr-ledger-1" }
 
-    assert_response :created
+    expect(response).to have_http_status(:created)
     body = JSON.parse(response.body)
 
-    assert_equal expected["reference_type"], body["reference_type"]
-    assert_equal expected["reference_id"], body["reference_id"]
-    assert_equal expected["entry_count"], body["entry_count"]
-    assert_equal "test-corr-ledger-1", body["correlation_id"]
+    expect(body["reference_type"]).to eq(expected["reference_type"])
+    expect(body["reference_id"]).to eq(expected["reference_id"])
+    expect(body["entry_count"]).to eq(expected["entry_count"])
+    expect(body["correlation_id"]).to eq("test-corr-ledger-1")
   end
 
-  test "POST /ledger_entries returns structured duplicate reference error" do
+  it "returns structured duplicate reference error" do
     payload = json_fixture("ledger_entries/post_duplicate_reference")
 
     post banking_admin_api_v1_ledger_entries_path,
          params: { ledger_entry: payload },
          as: :json,
          headers: { "X-Correlation-ID" => "test-corr-ledger-2" }
-    assert_response :created
+    expect(response).to have_http_status(:created)
 
     post banking_admin_api_v1_ledger_entries_path,
          params: { ledger_entry: payload },
          as: :json,
          headers: { "X-Correlation-ID" => "test-corr-ledger-3" }
 
-    assert_response :conflict
+    expect(response).to have_http_status(:conflict)
     body = JSON.parse(response.body)
     expected = json_fixture("errors/duplicate_reference_expected")
 
-    assert_equal expected["code"], body["code"]
-    assert_equal expected["message"], body["message"]
-    assert_equal "test-corr-ledger-3", body["correlation_id"]
+    expect(body["code"]).to eq(expected["code"])
+    expect(body["message"]).to eq(expected["message"])
+    expect(body["correlation_id"]).to eq("test-corr-ledger-3")
   end
 
-  test "POST /ledger_entries returns structured unbalanced transaction error" do
+  it "returns structured unbalanced transaction error" do
     payload = json_fixture("ledger_entries/post_unbalanced")
     expected = json_fixture("errors/unbalanced_transaction_expected")
 
@@ -95,15 +95,15 @@ class BankingAdmin::API::V1::EndpointsTest < ActionDispatch::IntegrationTest
          as: :json,
          headers: { "X-Correlation-ID" => "test-corr-ledger-4" }
 
-    assert_response :unprocessable_entity
+    expect(response).to have_http_status(:unprocessable_content)
     body = JSON.parse(response.body)
 
-    assert_equal expected["code"], body["code"]
-    assert_equal expected["message"], body["message"]
-    assert_equal "test-corr-ledger-4", body["correlation_id"]
+    expect(body["code"]).to eq(expected["code"])
+    expect(body["message"]).to eq(expected["message"])
+    expect(body["correlation_id"]).to eq("test-corr-ledger-4")
   end
 
-  test "GET /balances filters by account and asset" do
+  it "filters balances by account and asset" do
     @service.post_transaction(
       reference_type: "transfer",
       reference_id: "api-balance-ref-1",
@@ -122,20 +122,18 @@ class BankingAdmin::API::V1::EndpointsTest < ActionDispatch::IntegrationTest
         as: :json,
         headers: { "X-Correlation-ID" => "test-corr-balances-1" }
 
-    assert_response :ok
+    expect(response).to have_http_status(:ok)
     body = JSON.parse(response.body)
-    assert_equal "test-corr-balances-1", body["correlation_id"]
-    assert_equal 1, body["balances"].size
+    expect(body["correlation_id"]).to eq("test-corr-balances-1")
+    expect(body["balances"].size).to eq(1)
 
     balance = body["balances"].first
-    assert_equal expected_balance["account_id"], balance["account_id"]
-    assert_equal expected_balance["asset_code"], balance["asset_code"]
-    assert_equal expected_balance["available_amount"], balance["available_amount"]
-    assert_equal expected_balance["locked_amount"], balance["locked_amount"]
-    assert_equal expected_balance["borrowed_amount"], balance["borrowed_amount"]
+    expect(balance["account_id"]).to eq(expected_balance["account_id"])
+    expect(balance["asset_code"]).to eq(expected_balance["asset_code"])
+    expect(balance["available_amount"]).to eq(expected_balance["available_amount"])
+    expect(balance["locked_amount"]).to eq(expected_balance["locked_amount"])
+    expect(balance["borrowed_amount"]).to eq(expected_balance["borrowed_amount"])
   end
-
-  private
 
   def build_entry(account_id:, side:, amount:, reference_id:)
     ::BankingCore::Entities::LedgerEntry.new(

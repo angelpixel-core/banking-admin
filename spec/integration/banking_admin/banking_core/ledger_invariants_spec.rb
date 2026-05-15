@@ -1,8 +1,8 @@
-require "test_helper"
+require "rails_helper"
 require "securerandom"
 
-class BankingAdmin::BankingCore::LedgerInvariantsTest < ActiveSupport::TestCase
-  setup do
+RSpec.describe "BankingCore ledger invariants" do
+  before do
     ensure_ledger_entries_immutable_trigger!
 
     @service = BankingAdmin::BankingCore::LedgerService.new
@@ -13,36 +13,36 @@ class BankingAdmin::BankingCore::LedgerInvariantsTest < ActiveSupport::TestCase
     @service.create_account(id: @credit_account_id, account_type: "user", base_currency: "usd")
   end
 
-  test "posts balanced transaction successfully" do
+  it "posts balanced transaction successfully" do
     transaction = @service.post_transaction(
       reference_type: "transfer",
       reference_id: "ref-balanced-1",
       entries: balanced_entries("ref-balanced-1")
     )
 
-    assert_equal "transfer:ref-balanced-1", transaction.reference_key
-    assert_equal 1, BankingAdmin::Persistence::LedgerTransactionRecord.count
-    assert_equal 2, BankingAdmin::Persistence::LedgerEntryRecord.count
+    expect(transaction.reference_key).to eq("transfer:ref-balanced-1")
+    expect(BankingAdmin::Persistence::LedgerTransactionRecord.count).to eq(1)
+    expect(BankingAdmin::Persistence::LedgerEntryRecord.count).to eq(2)
   end
 
-  test "rejects duplicate transaction reference" do
+  it "rejects duplicate transaction reference" do
     @service.post_transaction(
       reference_type: "transfer",
       reference_id: "ref-dup-1",
       entries: balanced_entries("ref-dup-1")
     )
 
-    assert_raises(::BankingCore::DuplicateLedgerReferenceError) do
+    expect do
       @service.post_transaction(
         reference_type: "transfer",
         reference_id: "ref-dup-1",
         entries: balanced_entries("ref-dup-1")
       )
-    end
+    end.to raise_error(::BankingCore::DuplicateLedgerReferenceError)
   end
 
-  test "rejects unbalanced transaction" do
-    assert_raises(::BankingCore::UnbalancedLedgerTransactionError) do
+  it "rejects unbalanced transaction" do
+    expect do
       @service.post_transaction(
         reference_type: "transfer",
         reference_id: "ref-unbalanced-1",
@@ -51,10 +51,10 @@ class BankingAdmin::BankingCore::LedgerInvariantsTest < ActiveSupport::TestCase
           build_entry(account_id: @credit_account_id, side: "credit", amount: "90.00", reference_id: "ref-unbalanced-1")
         ]
       )
-    end
+    end.to raise_error(::BankingCore::UnbalancedLedgerTransactionError)
   end
 
-  test "installs immutable SQL trigger for ledger entries" do
+  it "installs immutable SQL trigger for ledger entries" do
     @service.post_transaction(
       reference_type: "transfer",
       reference_id: "ref-immutable-1",
@@ -62,18 +62,19 @@ class BankingAdmin::BankingCore::LedgerInvariantsTest < ActiveSupport::TestCase
     )
 
     entry = BankingAdmin::Persistence::LedgerEntryRecord.first
-    assert_not_nil entry
-    assert_operator BankingAdmin::Persistence::LedgerEntryRecord.count, :>, 0
+    expect(entry).not_to be_nil
+    expect(BankingAdmin::Persistence::LedgerEntryRecord.count).to be > 0
 
     trigger_count = ActiveRecord::Base.connection.select_value(<<~SQL)
       SELECT COUNT(*)
       FROM pg_trigger
       WHERE tgname IN ('trg_ledger_entries_no_update', 'trg_ledger_entries_no_delete')
     SQL
-    assert_equal 2, trigger_count.to_i
+
+    expect(trigger_count.to_i).to eq(2)
   end
 
-  test "projects balances from ledger history" do
+  it "projects balances from ledger history" do
     @service.post_transaction(
       reference_type: "transfer",
       reference_id: "ref-project-1",
@@ -81,16 +82,14 @@ class BankingAdmin::BankingCore::LedgerInvariantsTest < ActiveSupport::TestCase
     )
 
     projected_count = @service.project_balances
+    expect(projected_count).to eq(2)
 
-    assert_equal 2, projected_count
     debit_balance = BankingAdmin::Persistence::BalanceRecord.find_by(account_id: @debit_account_id, asset_code: "USD")
     credit_balance = BankingAdmin::Persistence::BalanceRecord.find_by(account_id: @credit_account_id, asset_code: "USD")
 
-    assert_equal BigDecimal("100.0"), debit_balance.available_amount
-    assert_equal BigDecimal("-100.0"), credit_balance.available_amount
+    expect(debit_balance.available_amount).to eq(BigDecimal("100.0"))
+    expect(credit_balance.available_amount).to eq(BigDecimal("-100.0"))
   end
-
-  private
 
   def ensure_ledger_entries_immutable_trigger!
     ActiveRecord::Base.connection.execute(<<~SQL)
