@@ -31,6 +31,13 @@ Detailed system-design documentation for this adapter is available at:
 - Correlation is propagated from `X-Correlation-ID` through `BankingAdmin::RequestContext` into outbox metadata.
 - Publisher workflow lives in `BankingAdmin::Events::OutboxPublisher` and transitions state `pending -> publishing -> published` (or `dead` after retry limit).
 
+## Balance read consistency (T6)
+
+- `ledger_entries` is canonical; `balances` is a derived read model.
+- Balance projection is planned as asynchronous after successful ledger posting.
+- `GET /balances` can briefly return stale data right after `POST /ledger_entries` (eventual consistency).
+- Operator recovery/reconciliation command is `banking_admin:rebuild_balances`.
+
 ## Testing
 
 Run the suite with:
