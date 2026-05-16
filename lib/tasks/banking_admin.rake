@@ -27,4 +27,34 @@ namespace :banking_admin do
 
     puts "T2 verification OK"
   end
+
+  desc "Rebuild balances projection from ledger history"
+  task rebuild_balances: :environment do
+    started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    projected = BankingAdmin::BankingCore::LedgerService.new.project_balances
+    elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at
+
+    puts "projected_balances=#{projected}"
+    puts format("elapsed_seconds=%.3f", elapsed)
+    puts "rebuild_balances OK"
+  end
+
+  desc "Verify balances projection consistency against ledger history"
+  task verify_projection_consistency: :environment do
+    drifts = BankingAdmin::BankingCore::ProjectionConsistencyVerifier.new.call
+
+    if drifts.empty?
+      puts "projection_consistency OK"
+      next
+    end
+
+    puts "projection_consistency FAILED drift_count=#{drifts.size}"
+    drifts.each do |drift|
+      puts(
+        "account_id=#{drift.account_id} asset_code=#{drift.asset_code} expected=#{drift.expected.to_s('F')} actual=#{drift.actual.to_s('F')}"
+      )
+    end
+
+    abort "Projection drift detected"
+  end
 end

@@ -49,10 +49,12 @@ RSpec.describe "BankingAdmin API V1 endpoints" do
     payload = json_fixture("ledger_entries/post_valid")
     expected = json_fixture("ledger_entries/post_valid_expected")
 
-    post banking_admin_api_v1_ledger_entries_path,
-         params: { ledger_entry: payload },
-         as: :json,
-         headers: { "X-Correlation-ID" => "test-corr-ledger-1" }
+    expect do
+      post banking_admin_api_v1_ledger_entries_path,
+           params: { ledger_entry: payload },
+           as: :json,
+           headers: { "X-Correlation-ID" => "test-corr-ledger-1" }
+    end.to have_enqueued_job(BankingAdmin::BankingCore::ProjectBalancesJob)
 
     expect(response).to have_http_status(:created)
     body = JSON.parse(response.body)
@@ -81,6 +83,7 @@ RSpec.describe "BankingAdmin API V1 endpoints" do
          as: :json,
          headers: { "X-Correlation-ID" => "test-corr-ledger-2" }
     expect(response).to have_http_status(:created)
+    expect(enqueued_jobs.size).to eq(1)
 
     post banking_admin_api_v1_ledger_entries_path,
          params: { ledger_entry: payload },
@@ -96,6 +99,7 @@ RSpec.describe "BankingAdmin API V1 endpoints" do
     expect(body["correlation_id"]).to eq("test-corr-ledger-3")
 
     expect(BankingAdmin::Persistence::OutboxEventRecord.count).to eq(1)
+    expect(enqueued_jobs.size).to eq(1)
   end
 
   it "returns structured unbalanced transaction error" do

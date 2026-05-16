@@ -12,6 +12,8 @@ module BankingAdmin
             entries: build_entries(payload[:entries] || [])
           )
 
+          BankingAdmin::BankingCore::ProjectBalancesJob.perform_later
+
           render json: {
             reference_type: transaction.reference_type,
             reference_id: transaction.reference_id,
