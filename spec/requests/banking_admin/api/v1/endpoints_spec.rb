@@ -61,6 +61,16 @@ RSpec.describe "BankingAdmin API V1 endpoints" do
     expect(body["reference_id"]).to eq(expected["reference_id"])
     expect(body["entry_count"]).to eq(expected["entry_count"])
     expect(body["correlation_id"]).to eq("test-corr-ledger-1")
+
+    outbox_event = BankingAdmin::Persistence::OutboxEventRecord.order(:created_at).last
+    expect(outbox_event).not_to be_nil
+    expect(outbox_event.event_name).to eq("ledger.entry.posted")
+    expect(outbox_event.event_version).to eq("v1")
+    expect(outbox_event.correlation_id).to eq("test-corr-ledger-1")
+    expect(outbox_event.producer).to eq("banking-admin")
+    expect(outbox_event.state).to eq("pending")
+    expect(outbox_event.payload["reference_type"]).to eq(expected["reference_type"])
+    expect(outbox_event.payload["reference_id"]).to eq(expected["reference_id"])
   end
 
   it "returns structured duplicate reference error" do
@@ -84,6 +94,8 @@ RSpec.describe "BankingAdmin API V1 endpoints" do
     expect(body["code"]).to eq(expected["code"])
     expect(body["message"]).to eq(expected["message"])
     expect(body["correlation_id"]).to eq("test-corr-ledger-3")
+
+    expect(BankingAdmin::Persistence::OutboxEventRecord.count).to eq(1)
   end
 
   it "returns structured unbalanced transaction error" do
@@ -101,6 +113,8 @@ RSpec.describe "BankingAdmin API V1 endpoints" do
     expect(body["code"]).to eq(expected["code"])
     expect(body["message"]).to eq(expected["message"])
     expect(body["correlation_id"]).to eq("test-corr-ledger-4")
+
+    expect(BankingAdmin::Persistence::OutboxEventRecord.count).to eq(0)
   end
 
   it "filters balances by account and asset" do

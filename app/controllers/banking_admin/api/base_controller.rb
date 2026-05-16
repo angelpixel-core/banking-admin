@@ -3,6 +3,7 @@ module BankingAdmin
     class BaseController < ActionController::API
       before_action :assign_correlation_id
       after_action :set_correlation_header
+      after_action :clear_request_context
 
       rescue_from ActionController::ParameterMissing do |error|
         render_error(code: "invalid_request", message: error.message, status: :bad_request)
@@ -30,10 +31,15 @@ module BankingAdmin
 
       def assign_correlation_id
         @correlation_id = request.headers["X-Correlation-ID"].presence || request.request_id
+        BankingAdmin::RequestContext.correlation_id = @correlation_id
       end
 
       def set_correlation_header
         response.set_header("X-Correlation-ID", correlation_id)
+      end
+
+      def clear_request_context
+        BankingAdmin::RequestContext.reset
       end
 
       def render_error(code:, message:, status:, details: nil)

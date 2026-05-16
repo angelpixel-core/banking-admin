@@ -25,6 +25,12 @@ Detailed system-design documentation for this adapter is available at:
 - Immutable ledger entries: SQL trigger blocks update/delete on `ledger_entries`.
 - Double-entry and domain checks are enforced by `banking-core` aggregate rules.
 
+## T5 outbox emission
+
+- On successful ledger post, `banking-admin` writes `ledger_transactions`, `ledger_entries`, and `outbox_events` in the same DB transaction.
+- Correlation is propagated from `X-Correlation-ID` through `BankingAdmin::RequestContext` into outbox metadata.
+- Publisher workflow lives in `BankingAdmin::Events::OutboxPublisher` and transitions state `pending -> publishing -> published` (or `dead` after retry limit).
+
 ## Testing
 
 Run the suite with:
@@ -65,6 +71,12 @@ bin/rails banking_admin:verify_t2
 
 ```bash
 bundle exec rspec
+```
+
+If your local Docker Postgres is exposed on `5432` with default `postgres/postgres`, run tests with:
+
+```bash
+DB_PORT=5432 DB_USER=postgres DB_PASSWORD=postgres bundle exec rspec
 ```
 
 ## API payload fixtures for T3

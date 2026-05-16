@@ -25,6 +25,20 @@ module BankingAdmin
             created_at: entry.created_at
           )
         end
+
+        ::BankingAdmin::Persistence::OutboxEventRecord.create!(
+          id: SecureRandom.uuid,
+          event_name: "ledger.entry.posted",
+          event_version: "v1",
+          event_id: SecureRandom.uuid,
+          occurred_at: transaction.created_at,
+          correlation_id: BankingAdmin::RequestContext.correlation_id,
+          producer: "banking-admin",
+          payload: BankingAdmin::Events::LedgerEntryPosted.build_payload(transaction: transaction, transaction_id: transaction_record.id),
+          state: "pending",
+          attempts: 0,
+          next_attempt_at: transaction.created_at
+        )
       end
 
       def all_entries

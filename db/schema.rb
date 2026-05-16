@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_15_120300) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_16_183000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -56,6 +56,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_15_120300) do
     t.string "reference_type", null: false
     t.datetime "updated_at", null: false
     t.index ["reference_type", "reference_id"], name: "index_ledger_transactions_on_reference", unique: true
+  end
+
+  create_table "outbox_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.integer "attempts", default: 0, null: false
+    t.string "correlation_id"
+    t.datetime "created_at", null: false
+    t.string "event_id", null: false
+    t.string "event_name", null: false
+    t.string "event_version", null: false
+    t.text "last_error"
+    t.datetime "next_attempt_at"
+    t.datetime "occurred_at", null: false
+    t.jsonb "payload", default: {}, null: false
+    t.string "producer", null: false
+    t.datetime "published_at"
+    t.string "state", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["correlation_id"], name: "index_outbox_events_on_correlation_id"
+    t.index ["event_id"], name: "index_outbox_events_on_event_id", unique: true
+    t.index ["state", "next_attempt_at"], name: "index_outbox_events_on_state_and_next_attempt_at"
   end
 
   add_foreign_key "balances", "accounts"
