@@ -1,0 +1,13 @@
+flowchart TD
+  ctrl[API controllers]
+  base[Base API controller]
+  svc[Ledger service and use case factory]
+  core[banking-core use cases]
+  ports[Repository and unit of work adapters]
+  records[ActiveRecord persistence models]
+
+  ctrl --> base
+  ctrl --> svc
+  svc --> core
+  core --> ports
+  ports --> records

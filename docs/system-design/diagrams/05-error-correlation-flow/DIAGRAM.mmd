@@ -1,0 +1,11 @@
+flowchart TD
+  req[Incoming request]
+  corr[Resolve correlation id]
+  execute[Execute service and use case]
+  errorClass{Error class}
+  success[Success response with correlation id]
+  errorResp[Error envelope code message correlation_id]
+
+  req --> corr --> execute
+  execute -->|ok| success
+  execute -->|error| errorClass --> errorResp

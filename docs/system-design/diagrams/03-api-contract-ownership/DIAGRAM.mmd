@@ -1,0 +1,9 @@
+flowchart LR
+  routes[Versioned routes v1]
+  specs[Rswag request specs]
+  openapi[Generated OpenAPI docs]
+  contracts[External contract consumers]
+
+  routes --> specs
+  specs --> openapi
+  openapi --> contracts

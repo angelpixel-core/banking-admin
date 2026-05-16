@@ -1,0 +1,17 @@
+sequenceDiagram
+  autonumber
+  participant C as Client
+  participant A as API controller
+  participant S as Ledger service
+  participant U as Core use case
+  participant W as Unit of work
+  participant R as Repository adapters
+
+  C->>A: POST ledger entries
+  A->>S: normalized command
+  S->>U: execute
+  U->>W: begin transaction
+  U->>R: persist transaction and entries
+  U->>W: commit
+  U-->>A: result
+  A-->>C: response

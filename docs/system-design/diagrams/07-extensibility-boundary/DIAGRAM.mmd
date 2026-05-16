@@ -1,0 +1,7 @@
+flowchart TD
+  apiExt[API route extension]
+  serviceExt[Service factory extension]
+  portExt[Port implementation extension]
+  coreRules[Core domain invariants]
+
+  apiExt --> serviceExt --> portExt --> coreRules

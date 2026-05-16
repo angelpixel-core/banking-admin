@@ -13,6 +13,12 @@ This app consumes the framework-agnostic `banking-core` package and provides:
 - Domain logic and use cases live in `packages/banking-core`.
 - Rails-specific persistence and composition live in this app under `BankingAdmin::...`.
 
+## System Design
+
+Detailed system-design documentation for this adapter is available at:
+
+- `apps/banking-admin/docs/system-design/README.md`
+
 ## T2 persistence invariants
 
 - Global idempotency: `ledger_transactions(reference_type, reference_id)` is unique.

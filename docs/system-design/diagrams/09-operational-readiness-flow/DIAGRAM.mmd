@@ -1,0 +1,13 @@
+flowchart TD
+  deploy[Deploy or restart]
+  dbReady{Database ready}
+  migrate[Apply migrations]
+  boot[Boot service]
+  health[Health and smoke checks]
+  ready[Service ready]
+  fail[Rollback or fix path]
+
+  deploy --> dbReady
+  dbReady -->|yes| migrate --> boot --> health --> ready
+  dbReady -->|no| fail
+  health -->|fail| fail

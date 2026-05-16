@@ -1,0 +1,11 @@
+flowchart LR
+  callers[Gateway and direct clients]
+  api[banking-admin API]
+  core[banking-core use cases]
+  repos[Adapter repositories and unit of work]
+  db[(Postgres runtime)]
+
+  callers --> api
+  api --> core
+  core --> repos
+  repos --> db

@@ -1,0 +1,11 @@
+flowchart LR
+  accounts[(accounts)]
+  tx[(ledger_transactions)]
+  entries[(ledger_entries)]
+  balances[(balances projection)]
+  trigger[Immutable trigger no update delete]
+
+  tx --> entries
+  accounts --> entries
+  entries --> balances
+  trigger --> entries

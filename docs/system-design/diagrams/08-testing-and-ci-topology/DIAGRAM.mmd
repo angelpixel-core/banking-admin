@@ -1,0 +1,11 @@
+flowchart LR
+  unit[Core unit and service tests]
+  request[API request specs]
+  openapi[OpenAPI generation checks]
+  system[System smoke spec]
+  ci[CI workflow gates]
+
+  unit --> ci
+  request --> ci
+  openapi --> ci
+  system --> ci
