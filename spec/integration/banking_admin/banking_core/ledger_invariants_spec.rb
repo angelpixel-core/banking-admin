@@ -41,6 +41,30 @@ RSpec.describe "BankingCore ledger invariants" do
     end.to raise_error(::BankingCore::DuplicateLedgerReferenceError)
   end
 
+  it "keeps ledger side effects unchanged after duplicate replay attempt" do
+    @service.post_transaction(
+      reference_type: "transfer",
+      reference_id: "ref-replay-safe-1",
+      entries: balanced_entries("ref-replay-safe-1")
+    )
+
+    tx_count_before = BankingAdmin::Persistence::LedgerTransactionRecord.count
+    entry_count_before = BankingAdmin::Persistence::LedgerEntryRecord.count
+    outbox_count_before = BankingAdmin::Persistence::OutboxEventRecord.count
+
+    expect do
+      @service.post_transaction(
+        reference_type: "transfer",
+        reference_id: "ref-replay-safe-1",
+        entries: balanced_entries("ref-replay-safe-1")
+      )
+    end.to raise_error(::BankingCore::DuplicateLedgerReferenceError)
+
+    expect(BankingAdmin::Persistence::LedgerTransactionRecord.count).to eq(tx_count_before)
+    expect(BankingAdmin::Persistence::LedgerEntryRecord.count).to eq(entry_count_before)
+    expect(BankingAdmin::Persistence::OutboxEventRecord.count).to eq(outbox_count_before)
+  end
+
   it "rejects unbalanced transaction" do
     expect do
       @service.post_transaction(
