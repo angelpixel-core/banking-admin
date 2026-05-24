@@ -4,7 +4,7 @@ module BankingAdmin
       def self.measure(workflow_step:, correlation_id:, reference_type: nil, reference_id: nil)
         started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-        yield
+        result = yield
 
         Logger.info(
           event: "trace.span",
@@ -16,6 +16,8 @@ module BankingAdmin
           duration_ms: elapsed_ms(started_at),
           error_code: nil
         )
+
+        result
       rescue StandardError => e
         Logger.info(
           event: "trace.span",
