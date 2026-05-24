@@ -5,6 +5,10 @@ RSpec.describe BankingAdmin::Events::OutboxPublisher do
   let(:publisher) { instance_double("EventBusPublisher") }
   let(:service) { described_class.new(publisher: publisher, batch_size: 10) }
 
+  before do
+    allow(BankingAdmin::Observability::Logger).to receive(:info)
+  end
+
   it "moves pending event to published on successful publish" do
     event = create_outbox_event
     allow(publisher).to receive(:publish).and_return(true)
@@ -17,6 +21,9 @@ RSpec.describe BankingAdmin::Events::OutboxPublisher do
     expect(event.published_at).not_to be_nil
     expect(event.attempts).to eq(0)
     expect(event.last_error).to be_nil
+    expect(BankingAdmin::Observability::Logger).to have_received(:info).with(
+      hash_including(event: "outbox.publish.completed", status: "completed")
+    )
   end
 
   it "returns event to pending and increments attempts on failure" do
@@ -30,6 +37,9 @@ RSpec.describe BankingAdmin::Events::OutboxPublisher do
     expect(event.attempts).to eq(1)
     expect(event.last_error).to include("StandardError: bus down")
     expect(event.next_attempt_at).to be > Time.current
+    expect(BankingAdmin::Observability::Logger).to have_received(:info).with(
+      hash_including(event: "outbox.publish.failed", status: "failed")
+    )
   end
 
   it "marks event as dead once max attempts is reached" do

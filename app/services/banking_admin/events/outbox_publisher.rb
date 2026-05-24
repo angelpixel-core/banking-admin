@@ -38,11 +38,12 @@ module BankingAdmin
       end
 
       def publish_event(event)
+        started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         envelope = build_envelope(event)
         publisher.publish(envelope)
-        mark_published(event)
+        mark_published(event, started_at)
       rescue StandardError => e
-        mark_failure(event, e)
+        mark_failure(event, e, started_at)
       end
 
       def build_envelope(event)
@@ -57,11 +58,19 @@ module BankingAdmin
         }
       end
 
-      def mark_published(event)
+      def mark_published(event, started_at)
         event.update!(state: "published", published_at: Time.current, last_error: nil)
+        BankingAdmin::Observability::Logger.info(
+          event: "outbox.publish.completed",
+          status: "completed",
+          correlation_id: event.correlation_id || "missing-correlation-id",
+          reference_type: event.event_name,
+          reference_id: event.event_id,
+          duration_ms: elapsed_ms(started_at)
+        )
       end
 
-      def mark_failure(event, error)
+      def mark_failure(event, error, started_at)
         attempts = event.attempts + 1
         attributes = {
           attempts: attempts,
@@ -71,6 +80,16 @@ module BankingAdmin
 
         attributes[:state] = attempts >= MAX_ATTEMPTS ? "dead" : "pending"
         event.update!(attributes)
+
+        BankingAdmin::Observability::Logger.info(
+          event: "outbox.publish.failed",
+          status: "failed",
+          correlation_id: event.correlation_id || "missing-correlation-id",
+          reference_type: event.event_name,
+          reference_id: event.event_id,
+          duration_ms: elapsed_ms(started_at),
+          error_code: error.class.name
+        )
       end
 
       def retry_delay(attempt)
@@ -81,6 +100,10 @@ module BankingAdmin
         when 4 then 2.minutes
         else 5.minutes
         end
+      end
+
+      def elapsed_ms(started_at)
+        ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at) * 1000).round
       end
     end
   end

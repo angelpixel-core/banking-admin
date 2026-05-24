@@ -2,6 +2,8 @@ require "rails_helper"
 
 RSpec.describe "BankingAdmin API V1 endpoints" do
   before do
+    allow(BankingAdmin::Observability::Logger).to receive(:info)
+
     @service = BankingAdmin::BankingCore::LedgerService.new
     @debit_account_id = "11111111-1111-1111-1111-111111111111"
     @credit_account_id = "22222222-2222-2222-2222-222222222222"
@@ -73,6 +75,9 @@ RSpec.describe "BankingAdmin API V1 endpoints" do
     expect(outbox_event.state).to eq("pending")
     expect(outbox_event.payload["reference_type"]).to eq(expected["reference_type"])
     expect(outbox_event.payload["reference_id"]).to eq(expected["reference_id"])
+    expect(BankingAdmin::Observability::Logger).to have_received(:info).with(
+      hash_including(event: "ledger.post.accepted", status: "accepted", correlation_id: "test-corr-ledger-1")
+    )
   end
 
   it "returns structured duplicate reference error" do

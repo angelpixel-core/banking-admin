@@ -3,6 +3,8 @@ require "securerandom"
 
 RSpec.describe "T6 balance projection consistency" do
   before do
+    allow(BankingAdmin::Observability::Logger).to receive(:info)
+
     @service = BankingAdmin::BankingCore::LedgerService.new
     @debit_account_id = SecureRandom.uuid
     @credit_account_id = SecureRandom.uuid
@@ -23,6 +25,9 @@ RSpec.describe "T6 balance projection consistency" do
 
     expect(debit_balance.available_amount).to eq(BigDecimal("100.0"))
     expect(credit_balance.available_amount).to eq(BigDecimal("-100.0"))
+    expect(BankingAdmin::Observability::Logger).to have_received(:info).with(
+      hash_including(event: "projection.job.completed", status: "completed")
+    )
   end
 
   it "returns no drift when projection matches ledger history" do

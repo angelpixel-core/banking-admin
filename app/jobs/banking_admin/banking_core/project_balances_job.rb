@@ -4,7 +4,32 @@ module BankingAdmin
       queue_as :default
 
       def perform
-        LedgerService.new.project_balances
+        started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        projected = LedgerService.new.project_balances
+
+        BankingAdmin::Observability::Logger.info(
+          event: "projection.job.completed",
+          status: "completed",
+          correlation_id: BankingAdmin::RequestContext.correlation_id || "job-no-request-context",
+          duration_ms: elapsed_ms(started_at),
+          reference_type: "balances",
+          reference_id: projected.to_s
+        )
+      rescue StandardError
+        BankingAdmin::Observability::Logger.info(
+          event: "projection.job.failed",
+          status: "failed",
+          correlation_id: BankingAdmin::RequestContext.correlation_id || "job-no-request-context",
+          duration_ms: elapsed_ms(started_at),
+          error_code: "projection_failed"
+        )
+        raise
+      end
+
+      private
+
+      def elapsed_ms(started_at)
+        ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at) * 1000).round
       end
     end
   end

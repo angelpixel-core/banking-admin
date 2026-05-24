@@ -5,6 +5,7 @@ module BankingAdmin
     module V1
       class LedgerEntriesController < BaseController
         def create
+          started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
           payload = create_ledger_params
           transaction = ledger_service.post_transaction(
             reference_type: payload[:reference_type],
@@ -13,6 +14,15 @@ module BankingAdmin
           )
 
           BankingAdmin::BankingCore::ProjectBalancesJob.perform_later
+
+          BankingAdmin::Observability::Logger.info(
+            event: "ledger.post.accepted",
+            status: "accepted",
+            correlation_id: correlation_id,
+            reference_type: transaction.reference_type,
+            reference_id: transaction.reference_id,
+            duration_ms: elapsed_ms(started_at)
+          )
 
           render json: {
             reference_type: transaction.reference_type,
@@ -43,6 +53,10 @@ module BankingAdmin
 
         def ledger_service
           @ledger_service ||= BankingAdmin::BankingCore::LedgerService.new
+        end
+
+        def elapsed_ms(started_at)
+          ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at) * 1000).round
         end
       end
     end
