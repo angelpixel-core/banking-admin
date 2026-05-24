@@ -75,6 +75,15 @@ module BankingAdmin
           reference_id: event.event_id,
           duration_ms: elapsed_ms(started_at)
         )
+        BankingAdmin::Observability::Metrics.increment(
+          name: "outbox_publish_total",
+          labels: { status: "completed" }
+        )
+        BankingAdmin::Observability::Metrics.observe(
+          name: "outbox_publish_latency_ms",
+          value: elapsed_ms(started_at)
+        )
+        emit_outbox_pending_count
       end
 
       def mark_failure(event, error, started_at)
@@ -97,6 +106,15 @@ module BankingAdmin
           duration_ms: elapsed_ms(started_at),
           error_code: error.class.name
         )
+        BankingAdmin::Observability::Metrics.increment(
+          name: "outbox_publish_total",
+          labels: { status: "failed" }
+        )
+        BankingAdmin::Observability::Metrics.observe(
+          name: "outbox_publish_latency_ms",
+          value: elapsed_ms(started_at)
+        )
+        emit_outbox_pending_count
       end
 
       def retry_delay(attempt)
@@ -111,6 +129,13 @@ module BankingAdmin
 
       def elapsed_ms(started_at)
         ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at) * 1000).round
+      end
+
+      def emit_outbox_pending_count
+        BankingAdmin::Observability::Metrics.set(
+          name: "outbox_pending_count",
+          value: Persistence::OutboxEventRecord.where(state: "pending").count
+        )
       end
     end
   end

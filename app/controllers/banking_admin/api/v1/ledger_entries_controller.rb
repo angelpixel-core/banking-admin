@@ -31,12 +31,31 @@ module BankingAdmin
             duration_ms: elapsed_ms(started_at)
           )
 
+          BankingAdmin::Observability::Metrics.increment(
+            name: "ledger_post_total",
+            labels: { status: "accepted" }
+          )
+          BankingAdmin::Observability::Metrics.observe(
+            name: "ledger_post_latency_ms",
+            value: elapsed_ms(started_at)
+          )
+
           render json: {
             reference_type: transaction.reference_type,
             reference_id: transaction.reference_id,
             entry_count: transaction.entries.size,
             correlation_id: correlation_id
           }, status: :created
+        rescue StandardError
+          BankingAdmin::Observability::Metrics.increment(
+            name: "ledger_post_total",
+            labels: { status: "failed" }
+          )
+          BankingAdmin::Observability::Metrics.observe(
+            name: "ledger_post_latency_ms",
+            value: elapsed_ms(started_at)
+          )
+          raise
         end
 
         private
