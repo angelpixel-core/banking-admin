@@ -5,7 +5,14 @@ module BankingAdmin
 
       def perform
         started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        projected = LedgerService.new.project_balances
+        projected = BankingAdmin::Observability::TraceSpan.measure(
+          workflow_step: "projection_job",
+          correlation_id: BankingAdmin::RequestContext.correlation_id || "job-no-request-context",
+          reference_type: "balances",
+          reference_id: "projection"
+        ) do
+          LedgerService.new.project_balances
+        end
 
         BankingAdmin::Observability::Logger.info(
           event: "projection.job.completed",

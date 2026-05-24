@@ -7,11 +7,18 @@ module BankingAdmin
         def create
           started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
           payload = create_ledger_params
-          transaction = ledger_service.post_transaction(
+          transaction = BankingAdmin::Observability::TraceSpan.measure(
+            workflow_step: "ledger_post",
+            correlation_id: correlation_id,
             reference_type: payload[:reference_type],
-            reference_id: payload[:reference_id],
-            entries: build_entries(payload[:entries] || [])
-          )
+            reference_id: payload[:reference_id]
+          ) do
+            ledger_service.post_transaction(
+              reference_type: payload[:reference_type],
+              reference_id: payload[:reference_id],
+              entries: build_entries(payload[:entries] || [])
+            )
+          end
 
           BankingAdmin::BankingCore::ProjectBalancesJob.perform_later
 

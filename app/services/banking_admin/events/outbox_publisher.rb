@@ -39,9 +39,16 @@ module BankingAdmin
 
       def publish_event(event)
         started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        envelope = build_envelope(event)
-        publisher.publish(envelope)
-        mark_published(event, started_at)
+        BankingAdmin::Observability::TraceSpan.measure(
+          workflow_step: "outbox_publish",
+          correlation_id: event.correlation_id || "missing-correlation-id",
+          reference_type: event.event_name,
+          reference_id: event.event_id
+        ) do
+          envelope = build_envelope(event)
+          publisher.publish(envelope)
+          mark_published(event, started_at)
+        end
       rescue StandardError => e
         mark_failure(event, e, started_at)
       end

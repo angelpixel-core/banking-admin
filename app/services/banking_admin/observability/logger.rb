@@ -3,12 +3,13 @@ module BankingAdmin
     class Logger
       SERVICE_NAME = "banking-admin".freeze
 
-      def self.info(event:, status:, correlation_id:, reference_type: nil, reference_id: nil, duration_ms: nil, error_code: nil)
+      def self.info(event:, status:, correlation_id:, reference_type: nil, reference_id: nil, duration_ms: nil, error_code: nil, workflow_step: nil)
         payload = {
           service: SERVICE_NAME,
           event: event,
           status: status,
           correlation_id: correlation_id,
+          workflow_step: workflow_step,
           reference_type: reference_type,
           reference_id: reference_id,
           duration_ms: duration_ms,
