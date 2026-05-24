@@ -158,6 +158,76 @@ RSpec.describe "BankingAdmin API V1 endpoints" do
     expect(balance["borrowed_amount"]).to eq(expected_balance["borrowed_amount"])
   end
 
+  it "covers accounts to ledger to balances flow with eventual consistency" do
+    account_id = SecureRandom.uuid
+    correlation_id = "test-corr-flow-1"
+
+    post banking_admin_api_v1_accounts_path,
+         params: {
+           account: {
+             id: account_id,
+             account_type: "user",
+             base_currency: "USD",
+             status: "active"
+           }
+         },
+         as: :json,
+         headers: { "X-Correlation-ID" => correlation_id }
+
+    expect(response).to have_http_status(:created)
+
+    post banking_admin_api_v1_ledger_entries_path,
+         params: {
+           ledger_entry: {
+             reference_type: "transfer",
+             reference_id: "flow-ref-1",
+             entries: [
+               {
+                 id: SecureRandom.uuid,
+                 account_id: account_id,
+                 side: "debit",
+                 asset_code: "USD",
+                 amount: "25.00"
+               },
+               {
+                 id: SecureRandom.uuid,
+                 account_id: @credit_account_id,
+                 side: "credit",
+                 asset_code: "USD",
+                 amount: "25.00"
+               }
+             ]
+           }
+         },
+         as: :json,
+         headers: { "X-Correlation-ID" => correlation_id }
+
+    expect(response).to have_http_status(:created)
+    expect(enqueued_jobs.size).to be >= 1
+
+    get banking_admin_api_v1_balances_path,
+        params: { account_id: account_id, asset_code: "USD" },
+        as: :json,
+        headers: { "X-Correlation-ID" => correlation_id }
+
+    expect(response).to have_http_status(:ok)
+    before_projection = JSON.parse(response.body)
+    expect(before_projection["balances"]).to eq([])
+
+    perform_enqueued_jobs(only: BankingAdmin::BankingCore::ProjectBalancesJob)
+
+    get banking_admin_api_v1_balances_path,
+        params: { account_id: account_id, asset_code: "USD" },
+        as: :json,
+        headers: { "X-Correlation-ID" => correlation_id }
+
+    expect(response).to have_http_status(:ok)
+    after_projection = JSON.parse(response.body)
+    expect(after_projection["correlation_id"]).to eq(correlation_id)
+    expect(after_projection["balances"].size).to eq(1)
+    expect(after_projection["balances"].first["available_amount"]).to eq("25.0")
+  end
+
   def build_entry(account_id:, side:, amount:, reference_id:)
     ::BankingCore::Entities::LedgerEntry.new(
       id: SecureRandom.uuid,
