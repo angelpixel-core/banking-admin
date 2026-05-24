@@ -26,6 +26,24 @@ RSpec.describe BankingAdmin::Events::OutboxPublisher do
     )
   end
 
+  it "publishes envelope compatible with v1 contract fields" do
+    event = create_outbox_event
+    captured = nil
+    allow(publisher).to receive(:publish) { |envelope| captured = envelope; true }
+
+    service.call
+
+    expect(captured).to include(
+      event_name: "ledger.entry.posted",
+      event_version: "v1",
+      correlation_id: "corr-spec",
+      producer: "banking-admin"
+    )
+    expect(captured[:event_id]).to be_a(String)
+    expect(captured[:occurred_at]).to be_a(String)
+    expect(captured[:payload]).to include("reference_id" => "ref-1")
+  end
+
   it "returns event to pending and increments attempts on failure" do
     event = create_outbox_event
     allow(publisher).to receive(:publish).and_raise(StandardError, "bus down")
